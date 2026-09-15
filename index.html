@@ -1,0 +1,1041 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b1220" />
+  <title>Historiques Foot — Confrontations directes</title>
+  <style>
+    :root {
+      --bg: #0b1220; --bg2: #121a2b; --card: #162033; --card2: #1a2740;
+      --border: #243047; --text: #e8eef9; --muted: #8b9bb8;
+      --accent: #3dd68c; --accent2: #2bb673; --danger: #ff5c7a;
+      --warn: #f5c542; --info: #5b9dff; --radius: 14px;
+      --shadow: 0 8px 28px rgba(0,0,0,.35);
+      --font: "Segoe UI", system-ui, -apple-system, Roboto, Ubuntu, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0; font-family: var(--font);
+      background: radial-gradient(1200px 600px at 50% -10%, #1a2a4a 0%, var(--bg) 55%);
+      color: var(--text); min-height: 100vh; line-height: 1.45;
+    }
+    a { color: var(--info); }
+    .wrap { max-width: 920px; margin: 0 auto; padding: 16px 16px 48px; }
+    header { text-align: center; padding: 28px 8px 8px; }
+    .badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(61,214,140,.12); color: var(--accent);
+      border: 1px solid rgba(61,214,140,.35); padding: 4px 10px;
+      border-radius: 999px; font-size: 12px; font-weight: 600;
+      letter-spacing: .02em; margin-bottom: 12px;
+    }
+    .badge.live {
+      background: rgba(91,157,255,.12); color: var(--info);
+      border-color: rgba(91,157,255,.4);
+    }
+    h1 { margin: 0 0 6px; font-size: clamp(1.5rem, 4vw, 2rem); font-weight: 800; letter-spacing: -.02em; }
+    .subtitle { color: var(--muted); margin: 0 0 20px; font-size: .95rem; }
+    .search-box {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: calc(var(--radius) + 4px); padding: 16px; box-shadow: var(--shadow);
+    }
+    .dual-row { display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; align-items: start; }
+    .field-wrap { position: relative; min-width: 0; }
+    .field-label {
+      display: block; font-size: 11px; font-weight: 700; color: var(--muted);
+      text-transform: uppercase; letter-spacing: .04em; margin-bottom: 6px;
+    }
+    .field-wrap input {
+      width: 100%; background: var(--bg2); border: 1px solid var(--border);
+      color: var(--text); border-radius: 12px; padding: 14px 16px; font-size: 16px; outline: none;
+    }
+    .field-wrap input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(61,214,140,.15); }
+    .field-wrap input::placeholder { color: #667894; }
+    .vs-sep { align-self: end; padding-bottom: 14px; color: var(--muted); font-weight: 800; font-size: .85rem; letter-spacing: .06em; }
+    .ac-list {
+      position: absolute; left: 0; right: 0; top: calc(100% + 4px);
+      background: var(--card2); border: 1px solid var(--border); border-radius: 12px;
+      box-shadow: var(--shadow); z-index: 40; max-height: 240px; overflow-y: auto; display: none;
+    }
+    .ac-list.open { display: block; }
+    .ac-item {
+      display: flex; justify-content: space-between; align-items: center; gap: 8px;
+      width: 100%; padding: 10px 12px; border: none; background: transparent;
+      color: inherit; font: inherit; text-align: left; cursor: pointer;
+      border-bottom: 1px solid var(--border);
+    }
+    .ac-item:last-child { border-bottom: none; }
+    .ac-item:hover, .ac-item.active { background: rgba(61,214,140,.1); }
+    .ac-item .meta { color: var(--muted); font-size: 11px; white-space: nowrap; }
+    .ac-item .live-tag {
+      font-size: 10px; font-weight: 700; color: var(--info);
+      background: rgba(91,157,255,.15); padding: 2px 6px; border-radius: 6px;
+    }
+    .btn-row { margin-top: 12px; }
+    button.primary {
+      width: 100%; background: linear-gradient(180deg, var(--accent), var(--accent2));
+      color: #062515; border: none; border-radius: 12px; padding: 15px 18px;
+      font-weight: 800; font-size: 16px; cursor: pointer; letter-spacing: .01em;
+    }
+    button.primary:hover { filter: brightness(1.05); }
+    button.primary:active { transform: scale(.98); }
+    .hints { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; justify-content: center; }
+    .chip {
+      background: var(--bg2); border: 1px solid var(--border); color: var(--muted);
+      border-radius: 999px; padding: 6px 12px; font-size: 12px; cursor: pointer; transition: .15s ease;
+    }
+    .chip:hover, .chip:focus { color: var(--text); border-color: var(--accent); outline: none; }
+    .status { text-align: center; color: var(--muted); margin: 18px 0 8px; min-height: 1.4em; font-size: .92rem; }
+    .status.error { color: var(--danger); }
+    .status.ok { color: var(--accent); }
+    .loader {
+      display: inline-block; width: 14px; height: 14px; border: 2px solid var(--border);
+      border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite;
+      vertical-align: -2px; margin-right: 6px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .card {
+      background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 16px; margin-top: 14px; box-shadow: var(--shadow);
+    }
+    .card h2 { margin: 0 0 12px; font-size: 1.15rem; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .vs { color: var(--muted); font-weight: 600; font-size: .9rem; }
+    .tag {
+      font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 999px;
+      border: 1px solid var(--border); color: var(--muted);
+    }
+    .tag.demo { color: var(--warn); border-color: rgba(245,197,66,.35); background: rgba(245,197,66,.08); }
+    .tag.live { color: var(--info); border-color: rgba(91,157,255,.4); background: rgba(91,157,255,.1); }
+    .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px; }
+    .stat {
+      background: var(--bg2); border-radius: 12px; padding: 12px 8px;
+      text-align: center; border: 1px solid var(--border);
+    }
+    .stat .n { font-size: 1.45rem; font-weight: 800; line-height: 1.1; }
+    .stat .l { color: var(--muted); font-size: 12px; margin-top: 2px; }
+    .stat.win .n { color: var(--accent); }
+    .stat.draw .n { color: var(--warn); }
+    .stat.loss .n { color: var(--danger); }
+    .form-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 14px; }
+    .team-form { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; flex: 1; min-width: 200px; }
+    .team-name { font-weight: 700; font-size: .95rem; }
+    .pills { display: flex; gap: 4px; flex-wrap: wrap; }
+    .pill {
+      width: 26px; height: 26px; border-radius: 7px; display: inline-flex;
+      align-items: center; justify-content: center; font-size: 11px; font-weight: 800;
+    }
+    .pill.W { background: rgba(61,214,140,.2); color: var(--accent); }
+    .pill.D { background: rgba(245,197,66,.18); color: var(--warn); }
+    .pill.L { background: rgba(255,92,122,.2); color: var(--danger); }
+    table.h2h { width: 100%; border-collapse: collapse; font-size: .88rem; }
+    table.h2h th, table.h2h td {
+      padding: 10px 8px; text-align: left; border-bottom: 1px solid var(--border); vertical-align: middle;
+    }
+    table.h2h th {
+      color: var(--muted); font-weight: 600; font-size: 11px;
+      text-transform: uppercase; letter-spacing: .04em;
+    }
+    table.h2h tr:last-child td { border-bottom: none; }
+    table.h2h tr:hover td { background: rgba(255,255,255,.02); }
+    .score { font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .comp { color: var(--muted); font-size: .8rem; }
+    .venue {
+      display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 6px;
+      border-radius: 6px; background: var(--bg2); color: var(--muted); border: 1px solid var(--border);
+    }
+    .venue.home { color: var(--info); border-color: rgba(91,157,255,.35); }
+    .venue.away { color: #c4a0ff; border-color: rgba(196,160,255,.35); }
+    .suggest-list { display: grid; gap: 8px; }
+    .suggest-item {
+      display: flex; justify-content: space-between; align-items: center; gap: 10px;
+      background: var(--bg2); border: 1px solid var(--border); border-radius: 12px;
+      padding: 12px 14px; cursor: pointer; text-align: left; color: inherit; width: 100%; font: inherit;
+    }
+    .suggest-item:hover { border-color: var(--accent); background: var(--card2); }
+    .suggest-item .meta { color: var(--muted); font-size: .8rem; }
+    .team-card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+    .team-tile {
+      background: var(--bg2); border: 1px solid var(--border); border-radius: 12px;
+      padding: 12px; cursor: pointer; text-align: left; color: inherit; font: inherit;
+    }
+    .team-tile:hover { border-color: var(--accent); }
+    .team-tile strong { display: block; font-size: .92rem; }
+    .team-tile span { color: var(--muted); font-size: 11px; }
+    footer {
+      text-align: center; color: var(--muted); font-size: 12px;
+      margin-top: 28px; padding-top: 16px; border-top: 1px solid var(--border);
+    }
+    .empty { text-align: center; padding: 28px 12px; color: var(--muted); }
+    .empty strong { color: var(--text); display: block; margin-bottom: 6px; }
+    @media (max-width: 640px) {
+      .dual-row { grid-template-columns: 1fr; gap: 12px; }
+      .vs-sep { display: none; }
+      table.h2h .hide-sm { display: none; }
+      .stats-grid { gap: 6px; }
+      .stat .n { font-size: 1.25rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="badge" id="modeBadge">● Mode démo</div>
+      <h1>Historiques Foot</h1>
+      <p class="subtitle">Confrontations directes &amp; formes — Big 5, Europa &amp; Conference</p>
+    </header>
+    <div class="search-box">
+      <form id="searchForm" autocomplete="off">
+        <div class="dual-row">
+          <div class="field-wrap">
+            <label class="field-label" for="teamA">Équipe A</label>
+            <input id="teamA" type="search" enterkeyhint="next" placeholder="ex. Lyon, PSG" aria-label="Équipe A" aria-autocomplete="list" aria-controls="acA" />
+            <div class="ac-list" id="acA" role="listbox"></div>
+          </div>
+          <div class="vs-sep">VS</div>
+          <div class="field-wrap">
+            <label class="field-label" for="teamB">Équipe B (adversaire)</label>
+            <input id="teamB" type="search" enterkeyhint="search" placeholder="ex. Anderlecht, OM" aria-label="Équipe B adversaire" aria-autocomplete="list" aria-controls="acB" />
+            <div class="ac-list" id="acB" role="listbox"></div>
+          </div>
+        </div>
+        <div class="btn-row">
+          <button class="primary" type="submit">Voir l’historique</button>
+        </div>
+      </form>
+      <div class="hints" id="hints"></div>
+    </div>
+    <div class="status" id="status" aria-live="polite"></div>
+    <main id="results"></main>
+    <footer>
+      Historiques Foot · outil fraternel, pas un site de paris
+      <br />Données démo locales + aperçu live TheSportsDB (sans clé API)
+    </footer>
+  </div>
+<script>
+const TEAMS = [
+  { id:"psg", name:"Paris Saint-Germain", short:"PSG", country:"France", league:"Ligue 1", aliases:["psg","paris","paris sg","paris saint germain"] },
+  { id:"om", name:"Olympique de Marseille", short:"OM", country:"France", league:"Ligue 1", aliases:["om","marseille"] },
+  { id:"ol", name:"Olympique Lyonnais", short:"OL", country:"France", league:"Ligue 1", aliases:["ol","lyon"] },
+  { id:"lille", name:"LOSC Lille", short:"Lille", country:"France", league:"Ligue 1", aliases:["lille","losc"] },
+  { id:"lens", name:"RC Lens", short:"Lens", country:"France", league:"Ligue 1", aliases:["lens","rcl"] },
+  { id:"monaco", name:"AS Monaco", short:"Monaco", country:"France", league:"Ligue 1", aliases:["monaco","asm"] },
+  { id:"rennes", name:"Stade Rennais", short:"Rennes", country:"France", league:"Ligue 1", aliases:["rennes","srfc"] },
+  { id:"nice", name:"OGC Nice", short:"Nice", country:"France", league:"Ligue 1", aliases:["nice"] },
+  { id:"nantes", name:"FC Nantes", short:"Nantes", country:"France", league:"Ligue 1", aliases:["nantes","fcn"] },
+  { id:"strasbourg", name:"RC Strasbourg", short:"Strasbourg", country:"France", league:"Ligue 1", aliases:["strasbourg","rcs"] },
+  { id:"reims", name:"Stade de Reims", short:"Reims", country:"France", league:"Ligue 1", aliases:["reims"] },
+  { id:"toulouse", name:"Toulouse FC", short:"Toulouse", country:"France", league:"Ligue 1", aliases:["toulouse","tfc"] },
+  { id:"brest", name:"Stade Brestois", short:"Brest", country:"France", league:"Ligue 1", aliases:["brest"] },
+  { id:"montpellier", name:"Montpellier HSC", short:"MHSC", country:"France", league:"Ligue 1", aliases:["montpellier","mhsc"] },
+  { id:"lorient", name:"FC Lorient", short:"Lorient", country:"France", league:"Ligue 1", aliases:["lorient"] },
+  { id:"clermont", name:"Clermont Foot", short:"Clermont", country:"France", league:"Ligue 1", aliases:["clermont"] },
+  { id:"lehavre", name:"Le Havre AC", short:"Havre", country:"France", league:"Ligue 1", aliases:["le havre","havre","hac"] },
+  { id:"auxerre", name:"AJ Auxerre", short:"Auxerre", country:"France", league:"Ligue 1", aliases:["auxerre","aja"] },
+  { id:"angers", name:"Angers SCO", short:"Angers", country:"France", league:"Ligue 1", aliases:["angers","sco"] },
+  { id:"saintetienne", name:"AS Saint-Étienne", short:"ASSE", country:"France", league:"Ligue 1", aliases:["saint-etienne","saint etienne","asse","st etienne"] },
+  { id:"bordeaux", name:"Girondins de Bordeaux", short:"Bordeaux", country:"France", league:"Ligue 2", aliases:["bordeaux"] },
+  { id:"metz", name:"FC Metz", short:"Metz", country:"France", league:"Ligue 2", aliases:["metz"] },
+  { id:"caen", name:"Stade Malherbe Caen", short:"Caen", country:"France", league:"Ligue 2", aliases:["caen","smc"] },
+  { id:"grenoble", name:"Grenoble Foot 38", short:"Grenoble", country:"France", league:"Ligue 2", aliases:["grenoble","gf38"] },
+  { id:"amiens", name:"Amiens SC", short:"Amiens", country:"France", league:"Ligue 2", aliases:["amiens"] },
+  { id:"guingamp", name:"EA Guingamp", short:"Guingamp", country:"France", league:"Ligue 2", aliases:["guingamp","eag"] },
+  { id:"parisfc", name:"Paris FC", short:"Paris FC", country:"France", league:"Ligue 2", aliases:["paris fc","pfc"] },
+  { id:"bastia", name:"SC Bastia", short:"Bastia", country:"France", league:"Ligue 2", aliases:["bastia"] },
+  { id:"ajaccio", name:"AC Ajaccio", short:"Ajaccio", country:"France", league:"Ligue 2", aliases:["ajaccio","aca"] },
+  { id:"laval", name:"Stade Lavallois", short:"Laval", country:"France", league:"Ligue 2", aliases:["laval"] },
+  { id:"arsenal", name:"Arsenal", short:"Arsenal", country:"Angleterre", league:"Premier League", aliases:["arsenal","gunners"] },
+  { id:"chelsea", name:"Chelsea", short:"Chelsea", country:"Angleterre", league:"Premier League", aliases:["chelsea"] },
+  { id:"liverpool", name:"Liverpool", short:"Liverpool", country:"Angleterre", league:"Premier League", aliases:["liverpool","lfc"] },
+  { id:"mancity", name:"Manchester City", short:"Man City", country:"Angleterre", league:"Premier League", aliases:["manchester city","man city","city","mcfc"] },
+  { id:"manutd", name:"Manchester United", short:"Man Utd", country:"Angleterre", league:"Premier League", aliases:["manchester united","man utd","man united","united","mufc"] },
+  { id:"tottenham", name:"Tottenham Hotspur", short:"Tottenham", country:"Angleterre", league:"Premier League", aliases:["tottenham","spurs"] },
+  { id:"newcastle", name:"Newcastle United", short:"Newcastle", country:"Angleterre", league:"Premier League", aliases:["newcastle","nufc"] },
+  { id:"astonvilla", name:"Aston Villa", short:"Villa", country:"Angleterre", league:"Premier League", aliases:["aston villa","villa"] },
+  { id:"westham", name:"West Ham United", short:"West Ham", country:"Angleterre", league:"Premier League", aliases:["west ham","westham"] },
+  { id:"brighton", name:"Brighton & Hove Albion", short:"Brighton", country:"Angleterre", league:"Premier League", aliases:["brighton"] },
+  { id:"everton", name:"Everton", short:"Everton", country:"Angleterre", league:"Premier League", aliases:["everton"] },
+  { id:"wolves", name:"Wolverhampton", short:"Wolves", country:"Angleterre", league:"Premier League", aliases:["wolves","wolverhampton"] },
+  { id:"crystalpalace", name:"Crystal Palace", short:"Palace", country:"Angleterre", league:"Premier League", aliases:["crystal palace","palace"] },
+  { id:"fulham", name:"Fulham", short:"Fulham", country:"Angleterre", league:"Premier League", aliases:["fulham"] },
+  { id:"brentford", name:"Brentford", short:"Brentford", country:"Angleterre", league:"Premier League", aliases:["brentford"] },
+  { id:"bournemouth", name:"AFC Bournemouth", short:"Bournemouth", country:"Angleterre", league:"Premier League", aliases:["bournemouth","afc bournemouth"] },
+  { id:"realmadrid", name:"Real Madrid", short:"Real", country:"Espagne", league:"La Liga", aliases:["real madrid","real","madrid"] },
+  { id:"barcelona", name:"FC Barcelone", short:"Barça", country:"Espagne", league:"La Liga", aliases:["barcelone","barcelona","barca","barça","fcb"] },
+  { id:"atletico", name:"Atlético de Madrid", short:"Atlético", country:"Espagne", league:"La Liga", aliases:["atletico","atlético","atleti"] },
+  { id:"sevilla", name:"Séville FC", short:"Séville", country:"Espagne", league:"La Liga", aliases:["seville","séville","sevilla"] },
+  { id:"villarreal", name:"Villarreal", short:"Villarreal", country:"Espagne", league:"La Liga", aliases:["villarreal"] },
+  { id:"realsociedad", name:"Real Sociedad", short:"Sociedad", country:"Espagne", league:"La Liga", aliases:["real sociedad","sociedad"] },
+  { id:"athletic", name:"Athletic Bilbao", short:"Bilbao", country:"Espagne", league:"La Liga", aliases:["athletic","bilbao"] },
+  { id:"betis", name:"Real Betis", short:"Betis", country:"Espagne", league:"La Liga", aliases:["betis","real betis"] },
+  { id:"valencia", name:"Valence CF", short:"Valence", country:"Espagne", league:"La Liga", aliases:["valence","valencia"] },
+  { id:"girona", name:"Girona FC", short:"Girona", country:"Espagne", league:"La Liga", aliases:["girona"] },
+  { id:"bayern", name:"Bayern Munich", short:"Bayern", country:"Allemagne", league:"Bundesliga", aliases:["bayern","bayern munich"] },
+  { id:"dortmund", name:"Borussia Dortmund", short:"Dortmund", country:"Allemagne", league:"Bundesliga", aliases:["dortmund","bvb","borussia dortmund"] },
+  { id:"leipzig", name:"RB Leipzig", short:"Leipzig", country:"Allemagne", league:"Bundesliga", aliases:["leipzig","rb leipzig"] },
+  { id:"leverkusen", name:"Bayer Leverkusen", short:"Leverkusen", country:"Allemagne", league:"Bundesliga", aliases:["leverkusen","bayer"] },
+  { id:"frankfurt", name:"Eintracht Francfort", short:"Francfort", country:"Allemagne", league:"Bundesliga", aliases:["francfort","frankfurt","eintracht"] },
+  { id:"wolfsburg", name:"VfL Wolfsburg", short:"Wolfsburg", country:"Allemagne", league:"Bundesliga", aliases:["wolfsburg"] },
+  { id:"gladbach", name:"Borussia M'gladbach", short:"Gladbach", country:"Allemagne", league:"Bundesliga", aliases:["gladbach","monchengladbach","mönchengladbach"] },
+  { id:"stuttgart", name:"VfB Stuttgart", short:"Stuttgart", country:"Allemagne", league:"Bundesliga", aliases:["stuttgart"] },
+  { id:"hoffenheim", name:"TSG Hoffenheim", short:"Hoffenheim", country:"Allemagne", league:"Bundesliga", aliases:["hoffenheim","tsg"] },
+  { id:"freiburg", name:"SC Fribourg", short:"Fribourg", country:"Allemagne", league:"Bundesliga", aliases:["fribourg","freiburg"] },
+  { id:"juventus", name:"Juventus", short:"Juve", country:"Italie", league:"Serie A", aliases:["juventus","juve"] },
+  { id:"inter", name:"Inter Milan", short:"Inter", country:"Italie", league:"Serie A", aliases:["inter","inter milan","nerazzurri"] },
+  { id:"milan", name:"AC Milan", short:"Milan", country:"Italie", league:"Serie A", aliases:["milan","ac milan","acm"] },
+  { id:"napoli", name:"SSC Napoli", short:"Napoli", country:"Italie", league:"Serie A", aliases:["napoli","naples"] },
+  { id:"roma", name:"AS Roma", short:"Roma", country:"Italie", league:"Serie A", aliases:["roma","as roma"] },
+  { id:"lazio", name:"SS Lazio", short:"Lazio", country:"Italie", league:"Serie A", aliases:["lazio"] },
+  { id:"atalanta", name:"Atalanta", short:"Atalanta", country:"Italie", league:"Serie A", aliases:["atalanta"] },
+  { id:"fiorentina", name:"Fiorentina", short:"Fiorentina", country:"Italie", league:"Serie A", aliases:["fiorentina"] },
+  { id:"torino", name:"Torino", short:"Torino", country:"Italie", league:"Serie A", aliases:["torino"] },
+  { id:"bologna", name:"Bologna", short:"Bologna", country:"Italie", league:"Serie A", aliases:["bologne","bologna"] },
+  { id:"porto", name:"FC Porto", short:"Porto", country:"Portugal", league:"Primeira Liga", aliases:["porto"] },
+  { id:"benfica", name:"SL Benfica", short:"Benfica", country:"Portugal", league:"Primeira Liga", aliases:["benfica"] },
+  { id:"sporting", name:"Sporting CP", short:"Sporting", country:"Portugal", league:"Primeira Liga", aliases:["sporting","sporting lisbonne"] },
+  { id:"ajax", name:"Ajax Amsterdam", short:"Ajax", country:"Pays-Bas", league:"Eredivisie", aliases:["ajax"] },
+  { id:"psv", name:"PSV Eindhoven", short:"PSV", country:"Pays-Bas", league:"Eredivisie", aliases:["psv"] },
+  { id:"feyenoord", name:"Feyenoord", short:"Feyenoord", country:"Pays-Bas", league:"Eredivisie", aliases:["feyenoord"] },
+  { id:"az", name:"AZ Alkmaar", short:"AZ", country:"Pays-Bas", league:"Eredivisie", aliases:["az","az alkmaar","alkmaar"] },
+  { id:"celtic", name:"Celtic", short:"Celtic", country:"Écosse", league:"Scottish Premiership", aliases:["celtic"] },
+  { id:"rangers", name:"Rangers", short:"Rangers", country:"Écosse", league:"Scottish Premiership", aliases:["rangers"] },
+  { id:"anderlecht", name:"RSC Anderlecht", short:"Anderlecht", country:"Belgique", league:"Pro League", aliases:["anderlecht","rsca"] },
+  { id:"unionsg", name:"Union Saint-Gilloise", short:"Union SG", country:"Belgique", league:"Pro League", aliases:["union sg","union saint gilloise","usg","saint-gilloise"] },
+  { id:"brugge", name:"Club Brugge", short:"Brugge", country:"Belgique", league:"Pro League", aliases:["brugge","club brugge","bruges"] },
+  { id:"genk", name:"KRC Genk", short:"Genk", country:"Belgique", league:"Pro League", aliases:["genk"] },
+  { id:"sturmgraz", name:"Sturm Graz", short:"Sturm", country:"Autriche", league:"Bundesliga AT", aliases:["sturm graz","sturm","graz"] },
+  { id:"salzburg", name:"Red Bull Salzburg", short:"Salzburg", country:"Autriche", league:"Bundesliga AT", aliases:["salzburg","rb salzburg","red bull salzburg"] },
+  { id:"rapidwien", name:"Rapid Vienne", short:"Rapid", country:"Autriche", league:"Bundesliga AT", aliases:["rapid","rapid vienne","rapid wien"] },
+  { id:"dinamozagreb", name:"Dinamo Zagreb", short:"Dinamo", country:"Croatie", league:"HNL", aliases:["dinamo zagreb","zagreb","dinamozagreb"] },
+  { id:"hajduk", name:"Hajduk Split", short:"Hajduk", country:"Croatie", league:"HNL", aliases:["hajduk","split"] },
+  { id:"plzen", name:"Viktoria Plzen", short:"Plzen", country:"Tchéquie", league:"Fortuna Liga", aliases:["plzen","viktoria plzen","pilsen"] },
+  { id:"slaviapraha", name:"Slavia Prague", short:"Slavia", country:"Tchéquie", league:"Fortuna Liga", aliases:["slavia","slavia prague","slavia praha"] },
+  { id:"ferencvaros", name:"Ferencváros", short:"Fradi", country:"Hongrie", league:"NB I", aliases:["ferencvaros","ferencváros","fradi","ftc"] },
+  { id:"besiktas", name:"Beşiktaş", short:"Beşiktaş", country:"Turquie", league:"Süper Lig", aliases:["besiktas","beşiktaş","bjk"] },
+  { id:"galatasaray", name:"Galatasaray", short:"Gala", country:"Turquie", league:"Süper Lig", aliases:["galatasaray","gala","gs"] },
+  { id:"fenerbahce", name:"Fenerbahçe", short:"Fener", country:"Turquie", league:"Süper Lig", aliases:["fenerbahce","fenerbahçe","fener"] },
+  { id:"beersheva", name:"Hapoel Beer Sheva", short:"Beer Sheva", country:"Israël", league:"Ligat Ha'Al", aliases:["beer sheva","hapoel beer sheva","beersheva"] },
+  { id:"maccabi", name:"Maccabi Tel Aviv", short:"Maccabi", country:"Israël", league:"Ligat Ha'Al", aliases:["maccabi","maccabi tel aviv"] },
+  { id:"levski", name:"Levski Sofia", short:"Levski", country:"Bulgarie", league:"First League", aliases:["levski","levski sofia","sofia"] },
+  { id:"ludogorets", name:"Ludogorets Razgrad", short:"Ludogorets", country:"Bulgarie", league:"First League", aliases:["ludogorets","razgrad"] },
+  { id:"oficrete", name:"OFI Crete", short:"OFI", country:"Grèce", league:"Super League", aliases:["ofi","ofi crete","crete","créte"] },
+  { id:"paok", name:"PAOK", short:"PAOK", country:"Grèce", league:"Super League", aliases:["paok","thessaloniki"] },
+  { id:"olympiacos", name:"Olympiacos", short:"Olympiacos", country:"Grèce", league:"Super League", aliases:["olympiacos","olympiakos"] },
+  { id:"lech", name:"Lech Poznań", short:"Lech", country:"Pologne", league:"Ekstraklasa", aliases:["lech","lech poznan","poznań","poznan"] },
+  { id:"legia", name:"Legia Varsovie", short:"Legia", country:"Pologne", league:"Ekstraklasa", aliases:["legia","legia varsovie","legia warsaw"] },
+  { id:"youngboys", name:"Young Boys", short:"YB", country:"Suisse", league:"Super League", aliases:["young boys","yb","berne"] },
+  { id:"basel", name:"FC Bâle", short:"Bâle", country:"Suisse", league:"Super League", aliases:["bale","bâle","basel"] },
+];
+const MATCHES = [
+  { home:"psg", away:"om", hg:4, ag:0, date:"2024-03-31", competition:"Ligue 1" },
+  { home:"om", away:"psg", hg:0, ag:2, date:"2023-10-08", competition:"Ligue 1" },
+  { home:"psg", away:"om", hg:2, ag:3, date:"2023-02-26", competition:"Ligue 1" },
+  { home:"om", away:"psg", hg:1, ag:1, date:"2022-10-16", competition:"Ligue 1" },
+  { home:"psg", away:"om", hg:2, ag:1, date:"2022-04-17", competition:"Ligue 1" },
+  { home:"om", away:"psg", hg:0, ag:0, date:"2021-09-26", competition:"Ligue 1" },
+  { home:"psg", away:"om", hg:0, ag:1, date:"2021-02-07", competition:"Coupe de France" },
+  { home:"om", away:"psg", hg:0, ag:2, date:"2020-09-13", competition:"Ligue 1" },
+  { home:"psg", away:"om", hg:4, ag:0, date:"2020-02-26", competition:"Coupe de France" },
+  { home:"psg", away:"om", hg:4, ag:0, date:"2019-10-27", competition:"Ligue 1" },
+  { home:"lille", away:"lens", hg:2, ag:1, date:"2024-03-29", competition:"Ligue 1" },
+  { home:"lens", away:"lille", hg:1, ag:1, date:"2023-10-08", competition:"Ligue 1" },
+  { home:"lille", away:"lens", hg:1, ag:0, date:"2023-04-01", competition:"Ligue 1" },
+  { home:"lens", away:"lille", hg:1, ag:1, date:"2022-10-09", competition:"Ligue 1" },
+  { home:"lille", away:"lens", hg:1, ag:2, date:"2022-05-01", competition:"Ligue 1" },
+  { home:"lens", away:"lille", hg:1, ag:0, date:"2021-09-18", competition:"Ligue 1" },
+  { home:"lille", away:"lens", hg:4, ag:0, date:"2021-05-07", competition:"Ligue 1" },
+  { home:"lens", away:"lille", hg:0, ag:3, date:"2020-09-18", competition:"Ligue 1" },
+  { home:"ol", away:"saintetienne", hg:2, ag:1, date:"2022-03-20", competition:"Ligue 1" },
+  { home:"saintetienne", away:"ol", hg:1, ag:1, date:"2021-10-03", competition:"Ligue 1" },
+  { home:"ol", away:"saintetienne", hg:3, ag:2, date:"2021-01-24", competition:"Ligue 1" },
+  { home:"saintetienne", away:"ol", hg:0, ag:5, date:"2020-10-08", competition:"Ligue 1" },
+  { home:"realmadrid", away:"barcelona", hg:3, ag:2, date:"2024-04-21", competition:"La Liga" },
+  { home:"barcelona", away:"realmadrid", hg:1, ag:2, date:"2024-01-14", competition:"Supercoupe d'Espagne" },
+  { home:"barcelona", away:"realmadrid", hg:1, ag:2, date:"2023-10-28", competition:"La Liga" },
+  { home:"realmadrid", away:"barcelona", hg:2, ag:1, date:"2023-04-05", competition:"Coupe du Roi" },
+  { home:"realmadrid", away:"barcelona", hg:3, ag:1, date:"2023-03-19", competition:"La Liga" },
+  { home:"barcelona", away:"realmadrid", hg:2, ag:1, date:"2023-03-02", competition:"Coupe du Roi" },
+  { home:"barcelona", away:"realmadrid", hg:1, ag:3, date:"2023-01-15", competition:"Supercoupe d'Espagne" },
+  { home:"barcelona", away:"realmadrid", hg:1, ag:0, date:"2022-10-16", competition:"La Liga" },
+  { home:"realmadrid", away:"barcelona", hg:3, ag:1, date:"2022-03-20", competition:"La Liga" },
+  { home:"barcelona", away:"realmadrid", hg:1, ag:2, date:"2021-10-24", competition:"La Liga" },
+  { home:"mancity", away:"manutd", hg:3, ag:1, date:"2024-03-03", competition:"Premier League" },
+  { home:"manutd", away:"mancity", hg:0, ag:3, date:"2023-10-29", competition:"Premier League" },
+  { home:"mancity", away:"manutd", hg:2, ag:1, date:"2023-06-03", competition:"FA Cup" },
+  { home:"manutd", away:"mancity", hg:2, ag:1, date:"2023-01-14", competition:"Premier League" },
+  { home:"mancity", away:"manutd", hg:6, ag:3, date:"2022-10-02", competition:"Premier League" },
+  { home:"manutd", away:"mancity", hg:0, ag:2, date:"2022-03-06", competition:"Premier League" },
+  { home:"mancity", away:"manutd", hg:2, ag:0, date:"2021-11-06", competition:"Premier League" },
+  { home:"manutd", away:"mancity", hg:0, ag:2, date:"2021-03-07", competition:"Premier League" },
+  { home:"bayern", away:"dortmund", hg:0, ag:2, date:"2024-03-30", competition:"Bundesliga" },
+  { home:"dortmund", away:"bayern", hg:0, ag:4, date:"2023-11-04", competition:"Bundesliga" },
+  { home:"bayern", away:"dortmund", hg:4, ag:2, date:"2023-04-01", competition:"Bundesliga" },
+  { home:"dortmund", away:"bayern", hg:2, ag:2, date:"2022-10-08", competition:"Bundesliga" },
+  { home:"bayern", away:"dortmund", hg:3, ag:1, date:"2022-04-23", competition:"Bundesliga" },
+  { home:"dortmund", away:"bayern", hg:1, ag:3, date:"2021-12-04", competition:"Bundesliga" },
+  { home:"bayern", away:"dortmund", hg:1, ag:1, date:"2021-04-06", competition:"DFB-Pokal" },
+  { home:"bayern", away:"dortmund", hg:4, ag:2, date:"2021-03-06", competition:"Bundesliga" },
+  { home:"liverpool", away:"everton", hg:2, ag:0, date:"2024-04-24", competition:"Premier League" },
+  { home:"everton", away:"liverpool", hg:2, ag:0, date:"2023-10-21", competition:"Premier League" },
+  { home:"liverpool", away:"everton", hg:2, ag:0, date:"2023-02-13", competition:"Premier League" },
+  { home:"everton", away:"liverpool", hg:0, ag:0, date:"2022-09-03", competition:"Premier League" },
+  { home:"arsenal", away:"tottenham", hg:2, ag:2, date:"2023-09-24", competition:"Premier League" },
+  { home:"tottenham", away:"arsenal", hg:0, ag:2, date:"2023-04-15", competition:"Premier League" },
+  { home:"arsenal", away:"tottenham", hg:3, ag:1, date:"2023-01-15", competition:"Premier League" },
+  { home:"tottenham", away:"arsenal", hg:3, ag:0, date:"2022-05-12", competition:"Premier League" },
+  { home:"inter", away:"milan", hg:1, ag:2, date:"2024-04-22", competition:"Serie A" },
+  { home:"milan", away:"inter", hg:1, ag:2, date:"2023-09-16", competition:"Serie A" },
+  { home:"inter", away:"milan", hg:1, ag:0, date:"2023-05-16", competition:"Champions League" },
+  { home:"milan", away:"inter", hg:0, ag:2, date:"2023-05-10", competition:"Champions League" },
+  { home:"milan", away:"inter", hg:0, ag:0, date:"2023-02-05", competition:"Serie A" },
+  { home:"inter", away:"milan", hg:3, ag:0, date:"2022-09-03", competition:"Serie A" },
+  { home:"roma", away:"lazio", hg:1, ag:0, date:"2024-04-06", competition:"Serie A" },
+  { home:"lazio", away:"roma", hg:0, ag:0, date:"2023-11-12", competition:"Serie A" },
+  { home:"roma", away:"lazio", hg:3, ag:0, date:"2023-03-19", competition:"Serie A" },
+  { home:"realmadrid", away:"atletico", hg:1, ag:1, date:"2024-02-04", competition:"La Liga" },
+  { home:"atletico", away:"realmadrid", hg:1, ag:1, date:"2023-09-24", competition:"La Liga" },
+  { home:"realmadrid", away:"atletico", hg:2, ag:1, date:"2023-01-11", competition:"Supercoupe d'Espagne" },
+  { home:"monaco", away:"nice", hg:0, ag:1, date:"2024-03-03", competition:"Ligue 1" },
+  { home:"nice", away:"monaco", hg:2, ag:3, date:"2023-11-11", competition:"Ligue 1" },
+  { home:"om", away:"ol", hg:3, ag:0, date:"2024-02-04", competition:"Ligue 1" },
+  { home:"ol", away:"om", hg:1, ag:0, date:"2023-09-23", competition:"Ligue 1" },
+  { home:"psg", away:"monaco", hg:5, ag:2, date:"2024-03-01", competition:"Ligue 1" },
+  { home:"monaco", away:"psg", hg:0, ag:0, date:"2023-11-24", competition:"Ligue 1" },
+  { home:"lille", away:"psg", hg:1, ag:1, date:"2024-02-10", competition:"Ligue 1" },
+  { home:"psg", away:"lille", hg:3, ag:1, date:"2023-12-17", competition:"Ligue 1" },
+  { home:"lens", away:"psg", hg:1, ag:0, date:"2023-08-26", competition:"Ligue 1" },
+  { home:"psg", away:"lens", hg:3, ag:1, date:"2024-04-28", competition:"Ligue 1" },
+  { home:"rennes", away:"nantes", hg:3, ag:1, date:"2024-01-14", competition:"Ligue 1" },
+  { home:"nantes", away:"rennes", hg:0, ag:3, date:"2023-10-01", competition:"Ligue 1" },
+  { home:"mancity", away:"liverpool", hg:1, ag:1, date:"2024-03-10", competition:"Premier League" },
+  { home:"liverpool", away:"mancity", hg:1, ag:1, date:"2023-11-25", competition:"Premier League" },
+  { home:"arsenal", away:"mancity", hg:0, ag:0, date:"2024-02-04", competition:"Premier League" },
+  { home:"mancity", away:"arsenal", hg:0, ag:0, date:"2023-10-08", competition:"Premier League" },
+  { home:"arsenal", away:"chelsea", hg:5, ag:0, date:"2023-10-21", competition:"Premier League" },
+  { home:"chelsea", away:"arsenal", hg:2, ag:2, date:"2024-04-23", competition:"Premier League" },
+  { home:"realmadrid", away:"bayern", hg:2, ag:1, date:"2024-04-30", competition:"Champions League" },
+  { home:"bayern", away:"realmadrid", hg:2, ag:2, date:"2024-04-08", competition:"Champions League" },
+  { home:"psg", away:"barcelona", hg:2, ag:3, date:"2024-04-16", competition:"Champions League" },
+  { home:"barcelona", away:"psg", hg:1, ag:4, date:"2024-04-10", competition:"Champions League" },
+  { home:"dortmund", away:"atletico", hg:4, ag:2, date:"2024-04-16", competition:"Champions League" },
+  { home:"atletico", away:"dortmund", hg:2, ag:1, date:"2024-04-10", competition:"Champions League" },
+  { home:"porto", away:"benfica", hg:0, ag:1, date:"2024-03-03", competition:"Primeira Liga" },
+  { home:"benfica", away:"porto", hg:2, ag:2, date:"2023-09-29", competition:"Primeira Liga" },
+  { home:"ajax", away:"feyenoord", hg:0, ag:1, date:"2024-04-07", competition:"Eredivisie" },
+  { home:"feyenoord", away:"ajax", hg:1, ag:1, date:"2023-09-24", competition:"Eredivisie" },
+  { home:"celtic", away:"rangers", hg:2, ag:1, date:"2024-04-07", competition:"Scottish Premiership" },
+  { home:"rangers", away:"celtic", hg:3, ag:3, date:"2023-12-30", competition:"Scottish Premiership" },
+  { home:"psg", away:"rennes", hg:1, ag:1, date:"2024-04-21", competition:"Ligue 1" },
+  { home:"nice", away:"psg", hg:1, ag:3, date:"2024-05-15", competition:"Ligue 1" },
+  { home:"psg", away:"toulouse", hg:1, ag:3, date:"2024-05-12", competition:"Coupe de France" },
+  { home:"om", away:"lille", hg:2, ag:1, date:"2024-04-05", competition:"Ligue 1" },
+  { home:"brest", away:"om", hg:1, ag:0, date:"2024-03-17", competition:"Ligue 1" },
+  { home:"om", away:"nantes", hg:2, ag:0, date:"2024-05-12", competition:"Ligue 1" },
+  { home:"lille", away:"nice", hg:2, ag:2, date:"2024-05-12", competition:"Ligue 1" },
+  { home:"lens", away:"montpellier", hg:2, ag:2, date:"2024-05-19", competition:"Ligue 1" },
+  { home:"monaco", away:"nantes", hg:4, ag:1, date:"2024-05-12", competition:"Ligue 1" },
+  { home:"ol", away:"strasbourg", hg:1, ag:1, date:"2024-05-12", competition:"Ligue 1" },
+  { home:"manutd", away:"newcastle", hg:3, ag:2, date:"2024-05-15", competition:"Premier League" },
+  { home:"bayern", away:"hoffenheim", hg:2, ag:1, date:"2024-05-12", competition:"Bundesliga" },
+  { home:"inter", away:"lazio", hg:1, ag:1, date:"2024-05-13", competition:"Serie A" },
+  { home:"milan", away:"torino", hg:2, ag:0, date:"2024-05-12", competition:"Serie A" },
+  { home:"realmadrid", away:"betis", hg:3, ag:0, date:"2024-05-14", competition:"La Liga" },
+  { home:"barcelona", away:"valencia", hg:3, ag:0, date:"2024-05-13", competition:"La Liga" },
+  { home:"mancity", away:"westham", hg:3, ag:1, date:"2024-05-11", competition:"Premier League" },
+  { home:"dortmund", away:"stuttgart", hg:4, ag:0, date:"2024-05-11", competition:"Bundesliga" },
+  { home:"liverpool", away:"wolves", hg:2, ag:0, date:"2024-05-19", competition:"Premier League" },
+  { home:"arsenal", away:"everton", hg:2, ag:1, date:"2024-05-19", competition:"Premier League" },
+  { home:"chelsea", away:"brighton", hg:2, ag:1, date:"2024-05-15", competition:"Premier League" },
+  { home:"napoli", away:"fiorentina", hg:2, ag:2, date:"2024-05-17", competition:"Serie A" },
+  { home:"juventus", away:"bologna", hg:3, ag:1, date:"2024-05-20", competition:"Serie A" },
+  { home:"leverkusen", away:"frankfurt", hg:3, ag:1, date:"2024-05-05", competition:"Bundesliga" },
+  { home:"leipzig", away:"wolfsburg", hg:2, ag:0, date:"2024-05-11", competition:"Bundesliga" },
+  { home:"sevilla", away:"villarreal", hg:1, ag:1, date:"2024-05-11", competition:"La Liga" },
+  { home:"atletico", away:"realsociedad", hg:1, ag:0, date:"2024-05-15", competition:"La Liga" },
+  { home:"strasbourg", away:"metz", hg:2, ag:1, date:"2024-05-12", competition:"Ligue 1" },
+  { home:"auxerre", away:"metz", hg:1, ag:0, date:"2024-04-20", competition:"Ligue 1" },
+  { home:"bordeaux", away:"caen", hg:1, ag:1, date:"2024-04-27", competition:"Ligue 2" },
+  { home:"parisfc", away:"bastia", hg:2, ag:0, date:"2024-05-03", competition:"Ligue 2" },
+  { home:"guingamp", away:"laval", hg:1, ag:0, date:"2024-04-13", competition:"Ligue 2" },
+  { home:"grenoble", away:"amiens", hg:2, ag:1, date:"2024-03-30", competition:"Ligue 2" },
+  { home:"ajaccio", away:"amiens", hg:0, ag:0, date:"2024-04-06", competition:"Ligue 2" },
+  { home:"anderlecht", away:"unionsg", hg:2, ag:2, date:"2024-03-10", competition:"Pro League" },
+  { home:"unionsg", away:"anderlecht", hg:1, ag:0, date:"2023-11-26", competition:"Pro League" },
+  { home:"anderlecht", away:"brugge", hg:1, ag:1, date:"2024-02-18", competition:"Pro League" },
+  { home:"brugge", away:"anderlecht", hg:2, ag:0, date:"2023-09-24", competition:"Pro League" },
+  { home:"ol", away:"anderlecht", hg:1, ag:1, date:"2017-11-23", competition:"Europa League" },
+  { home:"anderlecht", away:"ol", hg:1, ag:3, date:"2017-09-14", competition:"Europa League" },
+  { home:"psg", away:"anderlecht", hg:5, ag:0, date:"2015-10-28", competition:"Champions League" },
+  { home:"anderlecht", away:"psg", hg:0, ag:4, date:"2015-09-15", competition:"Champions League" },
+  { home:"sturmgraz", away:"salzburg", hg:0, ag:1, date:"2024-04-14", competition:"Bundesliga AT" },
+  { home:"salzburg", away:"sturmgraz", hg:1, ag:1, date:"2023-11-12", competition:"Bundesliga AT" },
+  { home:"sturmgraz", away:"rapidwien", hg:2, ag:0, date:"2024-03-03", competition:"Bundesliga AT" },
+  { home:"az", away:"ajax", hg:1, ag:2, date:"2024-04-06", competition:"Eredivisie" },
+  { home:"ajax", away:"az", hg:1, ag:2, date:"2023-11-12", competition:"Eredivisie" },
+  { home:"az", away:"psv", hg:0, ag:1, date:"2024-02-17", competition:"Eredivisie" },
+  { home:"psv", away:"az", hg:4, ag:0, date:"2023-10-29", competition:"Eredivisie" },
+  { home:"dinamozagreb", away:"hajduk", hg:1, ag:0, date:"2024-03-17", competition:"HNL" },
+  { home:"hajduk", away:"dinamozagreb", hg:1, ag:1, date:"2023-12-02", competition:"HNL" },
+  { home:"salzburg", away:"dinamozagreb", hg:2, ag:0, date:"2023-10-25", competition:"Champions League" },
+  { home:"dinamozagreb", away:"salzburg", hg:0, ag:1, date:"2023-08-29", competition:"Champions League" },
+  { home:"hoffenheim", away:"freiburg", hg:3, ag:2, date:"2024-04-07", competition:"Bundesliga" },
+  { home:"freiburg", away:"hoffenheim", hg:1, ag:1, date:"2023-11-12", competition:"Bundesliga" },
+  { home:"hoffenheim", away:"bayern", hg:1, ag:3, date:"2024-01-27", competition:"Bundesliga" },
+  { home:"ferencvaros", away:"plzen", hg:2, ag:0, date:"2023-11-09", competition:"Europa Conference" },
+  { home:"plzen", away:"ferencvaros", hg:1, ag:0, date:"2023-10-26", competition:"Europa Conference" },
+  { home:"unionsg", away:"liverpool", hg:2, ag:1, date:"2023-12-14", competition:"Europa League" },
+  { home:"liverpool", away:"unionsg", hg:2, ag:0, date:"2023-10-05", competition:"Europa League" },
+  { home:"bournemouth", away:"arsenal", hg:0, ag:4, date:"2024-05-04", competition:"Premier League" },
+  { home:"arsenal", away:"bournemouth", hg:3, ag:2, date:"2023-09-30", competition:"Premier League" },
+  { home:"bournemouth", away:"manutd", hg:2, ag:2, date:"2024-04-13", competition:"Premier League" },
+  { home:"manutd", away:"bournemouth", hg:0, ag:3, date:"2023-12-09", competition:"Premier League" },
+  { home:"lech", away:"legia", hg:1, ag:2, date:"2024-04-01", competition:"Ekstraklasa" },
+  { home:"legia", away:"lech", hg:0, ag:1, date:"2023-10-08", competition:"Ekstraklasa" },
+  { home:"besiktas", away:"galatasaray", hg:0, ag:1, date:"2024-03-03", competition:"Süper Lig" },
+  { home:"galatasaray", away:"besiktas", hg:2, ag:1, date:"2023-12-03", competition:"Süper Lig" },
+  { home:"fenerbahce", away:"besiktas", hg:2, ag:1, date:"2024-04-27", competition:"Süper Lig" },
+  { home:"besiktas", away:"fenerbahce", hg:1, ag:3, date:"2023-11-26", competition:"Süper Lig" },
+  { home:"beersheva", away:"maccabi", hg:1, ag:0, date:"2024-02-18", competition:"Ligat Ha'Al" },
+  { home:"maccabi", away:"beersheva", hg:2, ag:0, date:"2023-11-05", competition:"Ligat Ha'Al" },
+  { home:"levski", away:"ludogorets", hg:0, ag:2, date:"2024-03-10", competition:"First League" },
+  { home:"ludogorets", away:"levski", hg:3, ag:0, date:"2023-10-01", competition:"First League" },
+  { home:"oficrete", away:"paok", hg:0, ag:1, date:"2024-02-25", competition:"Super League" },
+  { home:"paok", away:"oficrete", hg:2, ag:0, date:"2023-11-12", competition:"Super League" },
+  { home:"olympiacos", away:"oficrete", hg:4, ag:0, date:"2024-01-21", competition:"Super League" },
+  { home:"oficrete", away:"olympiacos", hg:1, ag:2, date:"2023-09-24", competition:"Super League" },
+  { home:"plzen", away:"slaviapraha", hg:1, ag:3, date:"2024-04-14", competition:"Fortuna Liga" },
+  { home:"slaviapraha", away:"plzen", hg:2, ag:0, date:"2023-11-05", competition:"Fortuna Liga" },
+  { home:"youngboys", away:"basel", hg:3, ag:0, date:"2024-03-10", competition:"Super League" },
+  { home:"basel", away:"youngboys", hg:1, ag:1, date:"2023-10-29", competition:"Super League" },
+  { home:"genk", away:"unionsg", hg:0, ag:1, date:"2024-02-11", competition:"Pro League" },
+  { home:"unionsg", away:"genk", hg:2, ag:1, date:"2023-09-03", competition:"Pro League" },
+  { home:"lille", away:"sturmgraz", hg:2, ag:1, date:"2024-02-15", competition:"Europa Conference" },
+  { home:"sturmgraz", away:"lille", hg:0, ag:3, date:"2024-02-22", competition:"Europa Conference" },
+  { home:"rennes", away:"salzburg", hg:1, ag:1, date:"2022-09-15", competition:"Europa League" },
+  { home:"salzburg", away:"rennes", hg:1, ag:0, date:"2022-10-27", competition:"Europa League" },
+  { home:"fiorentina", away:"ferencvaros", hg:2, ag:1, date:"2023-03-16", competition:"Europa Conference" },
+  { home:"ferencvaros", away:"fiorentina", hg:1, ag:1, date:"2023-03-09", competition:"Europa Conference" },
+  { home:"westham", away:"az", hg:1, ag:0, date:"2023-05-11", competition:"Europa Conference" },
+  { home:"az", away:"westham", hg:0, ag:1, date:"2023-05-18", competition:"Europa Conference" },
+  { home:"bournemouth", away:"liverpool", hg:1, ag:2, date:"2024-01-21", competition:"Premier League" },
+  { home:"liverpool", away:"bournemouth", hg:3, ag:1, date:"2023-08-19", competition:"Premier League" },
+  { home:"lech", away:"fiorentina", hg:1, ag:4, date:"2023-03-15", competition:"Europa Conference" },
+  { home:"fiorentina", away:"lech", hg:2, ag:1, date:"2023-03-08", competition:"Europa Conference" },
+];
+
+const TEAM_IDS = new Set(TEAMS.map(t => t.id));
+const VALID_MATCHES = MATCHES.filter(m => TEAM_IDS.has(m.home) && TEAM_IDS.has(m.away));
+const DERBIES = [
+  { a: "PSG", b: "OM", label: "PSG vs OM" },
+  { a: "Real", b: "Barça", label: "Real – Barça" },
+  { a: "Man Utd", b: "Man City", label: "United vs City" },
+  { a: "Bayern", b: "Dortmund", label: "Bayern – Dortmund" },
+  { a: "Lille", b: "Lens", label: "Lille vs Lens" },
+  { a: "Inter", b: "Milan", label: "Inter – Milan" },
+  { a: "Lyon", b: "Anderlecht", label: "Lyon – Anderlecht" },
+  { a: "Union SG", b: "Liverpool", label: "Union SG – Liverpool" },
+];
+const TSDB = "https://www.thesportsdb.com/api/v1/json/3";
+
+const $ = (sel) => document.querySelector(sel);
+const norm = (s) => (s || "")
+  .toLowerCase()
+  .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+  .replace(/['’]/g, " ")
+  .replace(/[^a-z0-9\s]/g, " ")
+  .replace(/\s+/g, " ")
+  .trim();
+
+function escapeHtml(s) {
+  return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+function teamById(id) { return TEAMS.find(t => t.id === id); }
+function teamKeys(t) { return [t.name, t.short, ...(t.aliases || [])].map(norm); }
+
+function scoreTeam(query, t) {
+  const q = norm(query);
+  if (!q) return 0;
+  const keys = teamKeys(t);
+  if (keys.includes(q)) return 100;
+  if (keys.some(k => k.startsWith(q))) return 80;
+  if (keys.some(k => k.includes(q))) return 60;
+  const qTokens = q.split(" ");
+  let best = 0;
+  for (const k of keys) {
+    const kt = k.split(" ");
+    const hit = qTokens.filter(tok => kt.some(x => x.startsWith(tok) || tok.startsWith(x))).length;
+    if (hit) best = Math.max(best, 30 + hit * 15);
+  }
+  return best;
+}
+function matchTeam(query) {
+  const q = norm(query);
+  if (!q) return null;
+  let best = null, bestScore = 0;
+  for (const t of TEAMS) {
+    const s = scoreTeam(q, t);
+    if (s > bestScore) { bestScore = s; best = t; }
+  }
+  return bestScore >= 30 ? best : null;
+}
+function suggestLocal(query, limit = 8) {
+  const q = norm(query);
+  if (!q) return [];
+  return TEAMS.map(t => ({ t, s: scoreTeam(q, t) }))
+    .filter(x => x.s > 0)
+    .sort((a, b) => b.s - a.s || a.t.name.localeCompare(b.t.name))
+    .slice(0, limit).map(x => x.t);
+}
+function closestTeams(query, limit = 8) {
+  const q = norm(query);
+  const scored = TEAMS.map(t => ({ t, s: scoreTeam(q, t) })).sort((a, b) => b.s - a.s);
+  const good = scored.filter(x => x.s > 0).slice(0, limit);
+  return (good.length ? good : scored.slice(0, limit)).map(x => x.t);
+}
+function fmtDate(iso) {
+  if (!iso) return "—";
+  const [y, m, d] = String(iso).slice(0, 10).split("-").map(Number);
+  if (!y) return iso;
+  return new Date(Date.UTC(y, m - 1, d)).toLocaleDateString("fr-FR", { day:"2-digit", month:"short", year:"numeric", timeZone:"UTC" });
+}
+function resultFor(teamId, m) {
+  const isHome = m.home === teamId;
+  const gf = isHome ? m.hg : m.ag, ga = isHome ? m.ag : m.hg;
+  return gf > ga ? "W" : gf < ga ? "L" : "D";
+}
+function recentForm(teamId, n = 5, matches = VALID_MATCHES) {
+  return matches.filter(m => m.home === teamId || m.away === teamId)
+    .slice().sort((a, b) => String(b.date).localeCompare(String(a.date)))
+    .slice(0, n).map(m => resultFor(teamId, m));
+}
+function h2hMatches(aId, bId) {
+  return VALID_MATCHES.filter(m =>
+    (m.home === aId && m.away === bId) || (m.home === bId && m.away === aId)
+  ).slice().sort((a, b) => b.date.localeCompare(a.date));
+}
+function opponentsOf(teamId) {
+  const map = new Map();
+  for (const m of VALID_MATCHES) {
+    let opp = null;
+    if (m.home === teamId) opp = m.away;
+    else if (m.away === teamId) opp = m.home;
+    if (!opp) continue;
+    map.set(opp, (map.get(opp) || 0) + 1);
+  }
+  return [...map.entries()].sort((a, b) => b[1] - a[1])
+    .map(([id, count]) => ({ team: teamById(id), count })).filter(x => x.team);
+}
+function pillsHtml(form) {
+  if (!form.length) return `<span class="meta">Pas assez de matchs</span>`;
+  return `<div class="pills">${form.map(r =>
+    `<span class="pill ${r}" title="${r==="W"?"Victoire":r==="D"?"Nul":"Défaite"}">${r}</span>`
+  ).join("")}</div>`;
+}
+
+async function fetchJson(url, ms = 5000) {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), ms);
+  try {
+    const res = await fetch(url, { signal: ctrl.signal });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    return await res.json();
+  } finally { clearTimeout(t); }
+}
+async function liveSearchTeams(name) {
+  try {
+    const data = await fetchJson(`${TSDB}/searchteams.php?t=${encodeURIComponent(name)}`);
+    return ((data && data.teams) || [])
+      .filter(t => (t.strSport || "").toLowerCase() === "soccer")
+      .slice(0, 8)
+      .map(t => ({
+        id: "live_" + t.idTeam, liveId: t.idTeam, name: t.strTeam,
+        short: t.strTeamShort || t.strTeam, country: t.strCountry || "—",
+        league: t.strLeague || "—", live: true,
+      }));
+  } catch (_) { return null; }
+}
+async function liveTeamEvents(teamId) {
+  try {
+    const data = await fetchJson(`${TSDB}/eventslast.php?id=${encodeURIComponent(teamId)}`);
+    return (data && data.results) || [];
+  } catch (_) { return []; }
+}
+function eventToMatch(ev, aName, bName) {
+  const home = ev.strHomeTeam || "", away = ev.strAwayTeam || "";
+  const hn = norm(home), an = norm(away), a = norm(aName), b = norm(bName);
+  const involves =
+    (hn.includes(a) || a.includes(hn) || hn.includes(b) || b.includes(hn)) &&
+    (an.includes(a) || a.includes(an) || an.includes(b) || b.includes(an));
+  if (!involves) return null;
+  const hg = parseInt(ev.intHomeScore, 10), ag = parseInt(ev.intAwayScore, 10);
+  if (Number.isNaN(hg) || Number.isNaN(ag)) return null;
+  const homeIsA = hn.includes(a) || a.includes(hn);
+  return {
+    home: homeIsA ? "A" : "B", away: homeIsA ? "B" : "A",
+    homeName: home, awayName: away, hg, ag,
+    date: (ev.dateEvent || "").slice(0, 10),
+    competition: ev.strLeague || ev.strEvent || "Live", live: true,
+  };
+}
+async function buildLiveH2H(teamA, teamB) {
+  let liveA = teamA.liveId ? teamA : null;
+  let liveB = teamB.liveId ? teamB : null;
+  if (!liveA) { const f = await liveSearchTeams(teamA.name || teamA.short); if (f && f.length) liveA = f[0]; }
+  if (!liveB) { const f = await liveSearchTeams(teamB.name || teamB.short); if (f && f.length) liveB = f[0]; }
+  if (!liveA || !liveB) return { matches: [], formA: [], formB: [], liveA, liveB };
+  const [evA, evB] = await Promise.all([liveTeamEvents(liveA.liveId), liveTeamEvents(liveB.liveId)]);
+  const aName = liveA.name, bName = liveB.name;
+  const seen = new Set(), matches = [];
+  for (const ev of [...evA, ...evB]) {
+    const key = ev.idEvent || (ev.dateEvent + ev.strHomeTeam + ev.strAwayTeam);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const m = eventToMatch(ev, aName, bName);
+    if (m) matches.push(m);
+  }
+  matches.sort((x, y) => String(y.date).localeCompare(String(x.date)));
+  const formFrom = (events, name) => events.slice(0, 5).map(ev => {
+    const isHome = norm(ev.strHomeTeam||"").includes(norm(name)) || norm(name).includes(norm(ev.strHomeTeam||""));
+    const hg = parseInt(ev.intHomeScore, 10), ag = parseInt(ev.intAwayScore, 10);
+    if (Number.isNaN(hg) || Number.isNaN(ag)) return null;
+    const gf = isHome ? hg : ag, ga = isHome ? ag : hg;
+    return gf > ga ? "W" : gf < ga ? "L" : "D";
+  }).filter(Boolean);
+  return { matches, formA: formFrom(evA, aName), formB: formFrom(evB, bName), liveA, liveB };
+}
+
+function setStatus(msg, kind = "") {
+  const el = $("#status");
+  el.className = "status" + (kind ? " " + kind : "");
+  el.innerHTML = msg || "";
+}
+function updateModeBadge(mode) {
+  const el = $("#modeBadge");
+  if (mode === "live") { el.className = "badge live"; el.textContent = "● Live (TheSportsDB)"; }
+  else if (mode === "mixed") { el.className = "badge live"; el.textContent = "● Mode démo + Live"; }
+  else { el.className = "badge"; el.textContent = "● Mode démo"; }
+}
+
+function renderH2H(teamA, teamB, matches, opts = {}) {
+  const source = opts.source || "demo";
+  const formA = opts.formA || recentForm(teamA.id);
+  const formB = opts.formB || recentForm(teamB.id);
+  const tag = source === "live" ? `<span class="tag live">Live</span>` : `<span class="tag demo">Mode démo</span>`;
+  const stats = { aw: 0, bw: 0, d: 0, total: matches.length };
+  for (const m of matches) {
+    if (m.hg === m.ag) stats.d++;
+    else {
+      const aWon = (m.home === teamA.id || m.home === "A") ? m.hg > m.ag : m.ag > m.hg;
+      if (aWon) stats.aw++; else stats.bw++;
+    }
+  }
+  const rows = matches.map(m => {
+    let homeName, awayName, aIsHome;
+    if (m.live) { homeName = m.homeName; awayName = m.awayName; aIsHome = m.home === "A"; }
+    else {
+      homeName = teamById(m.home)?.short || m.home;
+      awayName = teamById(m.away)?.short || m.away;
+      aIsHome = m.home === teamA.id;
+    }
+    const venue = aIsHome ? "Domicile" : "Extérieur";
+    const venueClass = aIsHome ? "home" : "away";
+    return `<tr>
+      <td>${fmtDate(m.date)}</td>
+      <td class="hide-sm"><span class="comp">${escapeHtml(m.competition)}</span></td>
+      <td class="score">${escapeHtml(`${homeName} ${m.hg} – ${m.ag} ${awayName}`)}</td>
+      <td><span class="venue ${venueClass}">${venue}</span></td>
+    </tr>`;
+  }).join("");
+  return `
+    <section class="card">
+      <h2>${escapeHtml(teamA.short||teamA.name)} <span class="vs">vs</span> ${escapeHtml(teamB.short||teamB.name)} ${tag}</h2>
+      <div class="stats-grid">
+        <div class="stat win"><div class="n">${stats.aw}</div><div class="l">Victoires ${escapeHtml(teamA.short||teamA.name)}</div></div>
+        <div class="stat draw"><div class="n">${stats.d}</div><div class="l">Nuls</div></div>
+        <div class="stat loss"><div class="n">${stats.bw}</div><div class="l">Victoires ${escapeHtml(teamB.short||teamB.name)}</div></div>
+      </div>
+      <div class="form-row">
+        <div class="team-form"><span class="team-name">${escapeHtml(teamA.name)}</span>${pillsHtml(formA)}</div>
+        <div class="team-form"><span class="team-name">${escapeHtml(teamB.name)}</span>${pillsHtml(formB)}</div>
+      </div>
+      ${matches.length ? `
+      <div style="overflow-x:auto"><table class="h2h">
+        <thead><tr><th>Date</th><th class="hide-sm">Compétition</th><th>Score</th><th>Lieu*</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table></div>
+      <p class="comp" style="margin:10px 0 0">* Lieu du point de vue de ${escapeHtml(teamA.short||teamA.name)}. Total : ${stats.total} · ${source==="live"?"Live TheSportsDB":"base démo"}.</p>
+      ` : `<div class="empty"><strong>Aucun match H2H trouvé</strong>Essaie une autre paire.</div>`}
+    </section>`;
+}
+
+function renderTeam(team) {
+  const form = recentForm(team.id);
+  const opps = opponentsOf(team.id).slice(0, 10);
+  const recent = VALID_MATCHES.filter(m => m.home === team.id || m.away === team.id)
+    .slice().sort((a, b) => b.date.localeCompare(a.date)).slice(0, 8);
+  const recentRows = recent.map(m => {
+    const isHome = m.home === team.id;
+    const opp = teamById(isHome ? m.away : m.home);
+    const r = resultFor(team.id, m);
+    const score = isHome ? `${m.hg} – ${m.ag}` : `${m.ag} – ${m.hg}`;
+    return `<tr>
+      <td>${fmtDate(m.date)}</td>
+      <td class="hide-sm"><span class="comp">${escapeHtml(m.competition)}</span></td>
+      <td>${isHome?"vs":"@"} <strong>${escapeHtml(opp.short)}</strong></td>
+      <td class="score">${score} <span class="pill ${r}" style="display:inline-flex;margin-left:6px;width:22px;height:22px">${r}</span></td>
+    </tr>`;
+  }).join("");
+  const sugg = opps.map(o => `
+    <button type="button" class="suggest-item" data-fill-a="${escapeHtml(team.short)}" data-fill-b="${escapeHtml(o.team.short)}">
+      <span><strong>${escapeHtml(o.team.name)}</strong><br /><span class="meta">${escapeHtml(o.team.league)} · ${o.count} match(s)</span></span>
+      <span class="meta">Remplir B →</span>
+    </button>`).join("");
+  let extra = "";
+  if (opps.length < 4) {
+    extra = TEAMS.filter(t => t.id !== team.id && ["psg","om","ol","anderlecht","salzburg","az","liverpool"].includes(t.id))
+      .map(t => `
+      <button type="button" class="suggest-item" data-fill-a="${escapeHtml(team.short)}" data-fill-b="${escapeHtml(t.short)}">
+        <span><strong>${escapeHtml(t.name)}</strong><br /><span class="meta">${escapeHtml(t.league)}</span></span>
+        <span class="meta">Remplir B →</span>
+      </button>`).join("");
+  }
+  return `
+    <section class="card">
+      <h2>${escapeHtml(team.name)} <span class="tag demo">Mode démo</span></h2>
+      <p class="comp" style="margin-top:-6px;margin-bottom:12px">${escapeHtml(team.league)} · ${escapeHtml(team.country)}</p>
+      <div class="form-row"><div class="team-form"><span class="team-name">Forme récente</span>${pillsHtml(form)}</div></div>
+      ${recent.length ? `
+      <div style="overflow-x:auto;margin-bottom:14px"><table class="h2h">
+        <thead><tr><th>Date</th><th class="hide-sm">Compétition</th><th>Adversaire</th><th>Score*</th></tr></thead>
+        <tbody>${recentRows}</tbody>
+      </table></div>
+      <p class="comp" style="margin-top:-6px">* Score du point de vue de ${escapeHtml(team.short)}.</p>
+      ` : `<div class="empty"><strong>Pas de matchs récents en démo</strong></div>`}
+    </section>
+    <section class="card">
+      <h2>Adversaires suggérés</h2>
+      <p class="comp" style="margin-top:-6px;margin-bottom:12px">Clique pour remplir Équipe B.</p>
+      <div class="suggest-list">${sugg || extra || `<div class="empty">Aucune suggestion.</div>`}${sugg ? extra : ""}</div>
+    </section>`;
+}
+
+function renderClosest(query, teams, side) {
+  const tiles = teams.map(t => `
+    <button type="button" class="team-tile" data-pick-${side}="${escapeHtml(t.short)}">
+      <strong>${escapeHtml(t.short)}</strong><span>${escapeHtml(t.league)}</span>
+    </button>`).join("");
+  return `<section class="card">
+    <h2>Équipes proches de « ${escapeHtml(query)} »</h2>
+    <p class="comp" style="margin-top:-6px;margin-bottom:12px">Aucune correspondance exacte — suggestions :</p>
+    <div class="team-card-grid">${tiles}</div>
+  </section>`;
+}
+
+function renderWelcome() {
+  const buttons = DERBIES.map(d =>
+    `<button type="button" class="suggest-item" data-fill-a="${escapeHtml(d.a)}" data-fill-b="${escapeHtml(d.b)}">
+      <span><strong>${escapeHtml(d.label)}</strong><br /><span class="meta">Confrontation directe</span></span>
+      <span class="meta">Ouvrir →</span>
+    </button>`
+  ).join("");
+  return `
+    <section class="card"><h2>Confrontations populaires</h2><div class="suggest-list">${buttons}</div></section>
+    <section class="card"><h2>Comment chercher ?</h2>
+      <p style="margin:0;color:var(--muted);font-size:.92rem">
+        • Remplis <em>Équipe A</em> (et optionnellement <em>Équipe B</em>)<br />
+        • Les chips derby remplissent les deux champs<br />
+        • Sans H2H en démo → tentative automatique <strong>Live</strong> (TheSportsDB)<br />
+        • Pas un outil de paris — données démo + aperçu live
+      </p>
+    </section>`;
+}
+
+const acState = { A: { items: [], idx: -1, timer: null }, B: { items: [], idx: -1, timer: null } };
+function closeAc(side) {
+  const list = $(side === "A" ? "#acA" : "#acB");
+  list.classList.remove("open"); list.innerHTML = "";
+  acState[side].items = []; acState[side].idx = -1;
+}
+function renderAc(side, items) {
+  const list = $(side === "A" ? "#acA" : "#acB");
+  acState[side].items = items; acState[side].idx = -1;
+  if (!items.length) { closeAc(side); return; }
+  list.innerHTML = items.map((t, i) => `
+    <button type="button" class="ac-item" role="option" data-i="${i}">
+      <span><strong>${escapeHtml(t.short||t.name)}</strong> · ${escapeHtml(t.name)}</span>
+      <span class="meta">${t.live?`<span class="live-tag">Live</span> `:""}${escapeHtml(t.league||"")}</span>
+    </button>`).join("");
+  list.classList.add("open");
+  list.querySelectorAll(".ac-item").forEach(btn => {
+    btn.addEventListener("mousedown", (e) => { e.preventDefault(); pickAc(side, items[+btn.dataset.i]); });
+  });
+}
+function pickAc(side, team) {
+  const input = $(side === "A" ? "#teamA" : "#teamB");
+  input.value = team.short || team.name;
+  closeAc(side);
+}
+async function onType(side) {
+  const input = $(side === "A" ? "#teamA" : "#teamB");
+  const q = input.value.trim();
+  if (acState[side].timer) clearTimeout(acState[side].timer);
+  if (!q) { closeAc(side); return; }
+  const local = suggestLocal(q, 6);
+  renderAc(side, local);
+  acState[side].timer = setTimeout(async () => {
+    if (input.value.trim() !== q) return;
+    const live = await liveSearchTeams(q);
+    if (input.value.trim() !== q || !live) return;
+    const seen = new Set(local.map(t => norm(t.name)));
+    const merged = [...local];
+    for (const t of live) {
+      if (!seen.has(norm(t.name))) { seen.add(norm(t.name)); merged.push(t); }
+      if (merged.length >= 8) break;
+    }
+    renderAc(side, merged);
+  }, 320);
+}
+function bindAcKeyboard(side) {
+  const input = $(side === "A" ? "#teamA" : "#teamB");
+  input.addEventListener("keydown", (e) => {
+    const st = acState[side];
+    if (!st.items.length) return;
+    if (e.key === "ArrowDown") { e.preventDefault(); st.idx = Math.min(st.idx + 1, st.items.length - 1); highlightAc(side); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); st.idx = Math.max(st.idx - 1, 0); highlightAc(side); }
+    else if (e.key === "Enter" && st.idx >= 0) { e.preventDefault(); pickAc(side, st.items[st.idx]); }
+    else if (e.key === "Escape") closeAc(side);
+  });
+}
+function highlightAc(side) {
+  $(side === "A" ? "#acA" : "#acB").querySelectorAll(".ac-item").forEach((el, i) => {
+    el.classList.toggle("active", i === acState[side].idx);
+  });
+}
+
+async function runSearch() {
+  closeAc("A"); closeAc("B");
+  const rawA = $("#teamA").value.trim();
+  const rawB = $("#teamB").value.trim();
+  const results = $("#results");
+  if (!rawA && !rawB) {
+    setStatus("Saisis au moins Équipe A (ex. Lyon) ou un derby.");
+    results.innerHTML = renderWelcome(); bindResultActions(); return;
+  }
+  const qA = rawA || rawB;
+  const qB = rawA ? rawB : "";
+  setStatus(`<span class="loader"></span>Recherche en cours…`);
+  results.innerHTML = "";
+  await new Promise(r => setTimeout(r, 80));
+
+  let teamA = matchTeam(qA);
+  let teamB = qB ? matchTeam(qB) : null;
+
+  if (teamA && !qB) {
+    setStatus(`Équipe : ${teamA.name} · Mode démo`, "ok");
+    updateModeBadge("demo");
+    results.innerHTML = renderTeam(teamA); bindResultActions(); return;
+  }
+  if (!teamA) {
+    const close = closestTeams(qA, 8);
+    setStatus(`« ${qA} » introuvable — suggestions ci-dessous`, "error");
+    updateModeBadge("demo");
+    results.innerHTML = renderClosest(qA, close, "a");
+    const live = await liveSearchTeams(qA);
+    if (live && live.length) {
+      results.innerHTML += `<section class="card"><h2>Suggestions Live</h2><div class="team-card-grid">${
+        live.map(t => `<button type="button" class="team-tile" data-pick-a="${escapeHtml(t.name)}"><strong>${escapeHtml(t.name)}</strong><span>${escapeHtml(t.league)} · Live</span></button>`).join("")
+      }</div></section>`;
+      updateModeBadge("mixed");
+    }
+    bindResultActions(); return;
+  }
+  if (qB && !teamB) {
+    const close = closestTeams(qB, 8);
+    setStatus(`Adversaire « ${qB} » introuvable — choisis une suggestion`, "error");
+    results.innerHTML = renderTeam(teamA) + renderClosest(qB, close, "b");
+    const live = await liveSearchTeams(qB);
+    if (live && live.length) {
+      results.innerHTML += `<section class="card"><h2>Suggestions Live (adversaire)</h2><div class="team-card-grid">${
+        live.map(t => `<button type="button" class="team-tile" data-pick-b="${escapeHtml(t.name)}"><strong>${escapeHtml(t.name)}</strong><span>${escapeHtml(t.league)} · Live</span></button>`).join("")
+      }</div></section>`;
+      updateModeBadge("mixed");
+    } else updateModeBadge("demo");
+    bindResultActions(); return;
+  }
+
+  let matches = h2hMatches(teamA.id, teamB.id);
+  if (matches.length) {
+    setStatus(`${matches.length} confrontation(s) · Mode démo`, "ok");
+    updateModeBadge("demo");
+    results.innerHTML = renderH2H(teamA, teamB, matches, { source: "demo" });
+    bindResultActions(); return;
+  }
+
+  setStatus(`<span class="loader"></span>Pas de H2H en démo — recherche Live…`);
+  updateModeBadge("live");
+  try {
+    const live = await buildLiveH2H(teamA, teamB);
+    if (live.matches && live.matches.length) {
+      const dispA = { ...teamA, name: live.liveA?.name || teamA.name };
+      const dispB = { ...teamB, name: live.liveB?.name || teamB.name };
+      setStatus(`${live.matches.length} confrontation(s) Live`, "ok");
+      results.innerHTML = renderH2H(dispA, dispB, live.matches, { source: "live", formA: live.formA, formB: live.formB });
+      bindResultActions(); return;
+    }
+    setStatus("Aucun H2H récent en Live — suggestions d’adversaires", "error");
+    results.innerHTML = `<section class="card"><div class="empty"><strong>Pas de confrontations trouvées</strong>
+      ${escapeHtml(teamA.name)} vs ${escapeHtml(teamB.name)} — ni en démo, ni dans les derniers matchs Live.</div></section>` + renderTeam(teamA);
+    updateModeBadge(live.liveA || live.liveB ? "mixed" : "demo");
+    bindResultActions();
+  } catch (err) {
+    setStatus("Live indisponible (réseau / CORS / limite API) — mode démo uniquement", "error");
+    updateModeBadge("demo");
+    results.innerHTML = `<section class="card"><div class="empty"><strong>H2H introuvable en démo</strong>
+      Tentative Live échouée. Voici la fiche de ${escapeHtml(teamA.short)}.</div></section>` + renderTeam(teamA);
+    bindResultActions();
+  }
+}
+
+function fillBoth(a, b) {
+  $("#teamA").value = a || "";
+  $("#teamB").value = b || "";
+  runSearch();
+}
+function bindResultActions() {
+  document.querySelectorAll("[data-fill-a]").forEach(btn => {
+    btn.addEventListener("click", () => fillBoth(btn.getAttribute("data-fill-a"), btn.getAttribute("data-fill-b") || ""));
+  });
+  document.querySelectorAll("[data-pick-a]").forEach(btn => {
+    btn.addEventListener("click", () => { $("#teamA").value = btn.getAttribute("data-pick-a"); runSearch(); });
+  });
+  document.querySelectorAll("[data-pick-b]").forEach(btn => {
+    btn.addEventListener("click", () => { $("#teamB").value = btn.getAttribute("data-pick-b"); runSearch(); });
+  });
+}
+function initHints() {
+  const box = $("#hints");
+  box.innerHTML = DERBIES.map(d =>
+    `<button type="button" class="chip" data-a="${escapeHtml(d.a)}" data-b="${escapeHtml(d.b)}">${escapeHtml(d.label)}</button>`
+  ).join("");
+  box.querySelectorAll(".chip").forEach(chip => {
+    chip.addEventListener("click", () => fillBoth(chip.getAttribute("data-a"), chip.getAttribute("data-b")));
+  });
+}
+
+$("#searchForm").addEventListener("submit", (e) => { e.preventDefault(); runSearch(); });
+$("#teamA").addEventListener("input", () => onType("A"));
+$("#teamB").addEventListener("input", () => onType("B"));
+$("#teamA").addEventListener("blur", () => setTimeout(() => closeAc("A"), 150));
+$("#teamB").addEventListener("blur", () => setTimeout(() => closeAc("B"), 150));
+bindAcKeyboard("A"); bindAcKeyboard("B");
+document.addEventListener("click", (e) => { if (!e.target.closest(".field-wrap")) { closeAc("A"); closeAc("B"); } });
+initHints();
+$("#results").innerHTML = renderWelcome();
+bindResultActions();
+setStatus(`${TEAMS.length} équipes · ${VALID_MATCHES.length} matchs en base démo`);
+updateModeBadge("demo");
+
+</script>
+</body>
+</html>
