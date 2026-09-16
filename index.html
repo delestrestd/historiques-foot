@@ -169,6 +169,24 @@
     }
     .empty { text-align: center; padding: 28px 12px; color: var(--muted); }
     .empty strong { color: var(--text); display: block; margin-bottom: 6px; }
+    .byline {
+      margin: 10px 0 0; color: var(--muted); font-size: 11px;
+      letter-spacing: .12em; text-transform: uppercase;
+    }
+    footer img.cd { display: block; margin: 12px auto 0; width: 140px; height: auto; }
+    #s2d-splash {
+      position: fixed; inset: 0; z-index: 99999; background: #0b1220; color: #e8eef9;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      text-align: center; font-family: var(--font);
+    }
+    #s2d-splash h1 { margin: 0 0 8px; font-size: 2rem; font-weight: 800; letter-spacing: -.02em; }
+    #s2d-splash p { margin: 0; opacity: .85; font-size: .95rem; }
+    #s2d-splash img { margin: 12px auto; background: #000; display: block; }
+    #s2d-splash button {
+      margin-top: 16px; padding: .6rem 1.4rem; border: 1px solid var(--accent);
+      background: transparent; color: var(--text); cursor: pointer;
+      border-radius: 8px; font-weight: 600; font-size: .95rem;
+    }
     @media (max-width: 640px) {
       .dual-row { grid-template-columns: 1fr; gap: 12px; }
       .vs-sep { display: none; }
@@ -179,11 +197,17 @@
   </style>
 </head>
 <body>
+  <div id="s2d-splash" onclick="this.remove()">
+    <h1>Historiques Foot</h1>
+    <p>Créé par / Created by</p>
+    <img src="brand/s2d-branch.jpg" width="160" alt="">
+    <button type="button">Entrer · Enter</button>
+  </div>
   <div class="wrap">
     <header>
       <div class="badge" id="modeBadge">● Mode démo</div>
       <h1>Historiques Foot</h1>
-      <p class="subtitle">Confrontations directes &amp; formes — Big 5, Europa &amp; Conference</p>
+      <p class="subtitle">Confrontations directes &amp; formes — Big 5, Europa &amp; Conference<br />Head-to-head &amp; form — Big 5, Europa &amp; Conference</p>
     </header>
     <div class="search-box">
       <form id="searchForm" autocomplete="off">
@@ -209,8 +233,10 @@
     <div class="status" id="status" aria-live="polite"></div>
     <main id="results"></main>
     <footer>
-      Historiques Foot · outil fraternel, pas un site de paris
+      Historiques Foot · FR outil fraternel, pas un site de paris · EN family tool, not a betting site
       <br />Données démo locales + aperçu live TheSportsDB (sans clé API)
+      <p class="byline">Créé par / Created by</p>
+      <img class="cd" src="brand/s2d-branch.jpg" width="140" alt="">
     </footer>
   </div>
 <script>
